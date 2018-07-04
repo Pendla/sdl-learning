@@ -4,44 +4,74 @@
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
-int main(int argc, char* argv[]) {
-    SDL_Window* window = NULL;
-    SDL_Surface* screenSurface = NULL;
+SDL_Window* gWindow = NULL;
+SDL_Surface* gScreenSurface = NULL;
+SDL_Surface* gHelloWorld = NULL;
 
+bool initSDL() {
     if(SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("SDL Could not be initialized! SDL Error: %s\n", SDL_GetError());
-    } else {
-        window = SDL_CreateWindow(
-            "SDL Tutorial",
-            SDL_WINDOWPOS_UNDEFINED,
-            SDL_WINDOWPOS_UNDEFINED,
-            SCREEN_WIDTH,
-            SCREEN_HEIGHT,
-            SDL_WINDOW_SHOWN
-        );
-
-        if(window == NULL) {
-            printf(
-                "Window could not be initialized. SDL Error: %s\n",
-                SDL_GetError()
-            );
-        } else {
-            screenSurface = SDL_GetWindowSurface(window);
-
-            SDL_FillRect(
-                screenSurface,
-                NULL,
-                SDL_MapRGB(screenSurface->format, 0xFF, 0xFF, 0xFF)
-            );
-
-            SDL_UpdateWindowSurface(window);
-
-            SDL_Delay(2000);
-        }
+        return false;
     }
 
-    SDL_DestroyWindow(window);
+    gWindow = SDL_CreateWindow(
+        "SDL Tutorial",
+        SDL_WINDOWPOS_UNDEFINED,
+        SDL_WINDOWPOS_UNDEFINED,
+        SCREEN_WIDTH,
+        SCREEN_HEIGHT,
+        SDL_WINDOW_SHOWN
+    );
+
+    if(gWindow == NULL) {
+        printf("Window could not be created! SDL Error: %s\n", SDL_GetError());
+        return false;
+    }
+
+    gScreenSurface = SDL_GetWindowSurface(gWindow);
+
+    return true;
+}
+
+bool loadMedia() {
+    gHelloWorld = SDL_LoadBMP("resources/hello_world.bmp");
+    if(gHelloWorld == NULL) {
+        printf("Couldn't load media! SDL Error: %s\n", SDL_GetError());
+        return false;
+    }
+
+    return true;
+}
+
+void destroySDL() {
+    SDL_FreeSurface(gHelloWorld);
+    gHelloWorld = NULL;
+
+    SDL_DestroyWindow(gWindow);
+    gWindow = NULL;
+
     SDL_Quit();
+}
+
+
+int main(int argc, char* argv[]) {
+    bool sdlInitSuccess = initSDL();
+    if(!sdlInitSuccess) {
+        return -1;
+    }
+
+    bool loadMediaSuccess = loadMedia();
+    if(!loadMediaSuccess) {
+        return -1;
+    }
+
+    SDL_BlitSurface(gHelloWorld, NULL, gScreenSurface, NULL);
+
+    SDL_UpdateWindowSurface(gWindow);
+
+    SDL_Delay(2000);
+
+    destroySDL();
 
     return 0;
 }
