@@ -65,11 +65,19 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    SDL_BlitSurface(gHelloWorld, NULL, gScreenSurface, NULL);
+    SDL_Event event;
+    bool isRunning = true;
 
-    SDL_UpdateWindowSurface(gWindow);
+    while(isRunning) {
+        SDL_BlitSurface(gHelloWorld, NULL, gScreenSurface, NULL);
+        SDL_UpdateWindowSurface(gWindow);
 
-    SDL_Delay(2000);
+        while(SDL_PollEvent(&event) != 0) {
+            if(event.type == SDL_QUIT) {
+                isRunning = false;
+            }
+        }
+    }
 
     destroySDL();
 
