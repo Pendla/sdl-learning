@@ -7,4 +7,5 @@ add_executable(
 target_link_libraries(
     SDLLearning
     "-framework SDL2"
+    "-framework SDL2_image"
 )

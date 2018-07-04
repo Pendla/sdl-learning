@@ -1,6 +1,7 @@
 #include <string>
 
 #include <SDL2/SDL.h>
+#include <SDL2_image/SDL_image.h>
 #include <stdio.h>
 
 const int SCREEN_WIDTH = 1280;
@@ -38,6 +39,14 @@ bool initSDL() {
         return false;
     }
 
+    int imgFlags = IMG_INIT_PNG;
+    if(!(IMG_Init(imgFlags) & imgFlags)) {
+        printf(
+            "Could not initialize SDL Image extension! IMG Error: %s\n",
+            IMG_GetError()
+        );
+    }
+
     gScreenSurface = SDL_GetWindowSurface(gWindow);
 
     return true;
@@ -45,9 +54,9 @@ bool initSDL() {
 
 SDL_Surface* loadSurface(std::string path) {
     SDL_Surface* optimizedSurface;
-    SDL_Surface* surface = SDL_LoadBMP(path.c_str());
+    SDL_Surface* surface = IMG_Load(path.c_str());
     if(surface == NULL) {
-        printf("Couldn't load surface. SDL Error: %s\n", SDL_GetError());
+        printf("Couldn't load surface. IMG Error: %s\n", IMG_GetError());
         return NULL;
     }
 
@@ -63,25 +72,25 @@ SDL_Surface* loadSurface(std::string path) {
 }
 
 bool loadMedia() {
-    gSurfaces[SURFACE_ONE] = loadSurface("resources/hello_world_1.bmp");
+    gSurfaces[SURFACE_ONE] = loadSurface("resources/hello_world_1.png");
     if(gSurfaces[SURFACE_ONE] == NULL) {
         printf("Failed to load SURFACE_ONE");
         return false;
     }
 
-    gSurfaces[SURFACE_TWO] = loadSurface("resources/hello_world_2.bmp");
+    gSurfaces[SURFACE_TWO] = loadSurface("resources/hello_world_2.png");
     if(gSurfaces[SURFACE_TWO] == NULL) {
         printf("Failed to load SURFACE_TWO");
         return false;
     }
 
-    gSurfaces[SURFACE_THREE] = loadSurface("resources/hello_world_3.bmp");
+    gSurfaces[SURFACE_THREE] = loadSurface("resources/hello_world_3.png");
     if(gSurfaces[SURFACE_THREE] == NULL) {
         printf("Failed to load SURFACE_THREE");
         return false;
     }
 
-    gSurfaces[SURFACE_FOUR] = loadSurface("resources/hello_world_4.bmp");
+    gSurfaces[SURFACE_FOUR] = loadSurface("resources/hello_world_4.png");
     if(gSurfaces[SURFACE_FOUR] == NULL) {
         printf("Failed to load SURFACE_FOUR");
         return false;
