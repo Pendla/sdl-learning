@@ -3,8 +3,8 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
 
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
+const int SCREEN_WIDTH = 1280;
+const int SCREEN_HEIGHT = 720;
 
 enum Surfaces {
     SURFACE_ONE,
@@ -44,13 +44,22 @@ bool initSDL() {
 }
 
 SDL_Surface* loadSurface(std::string path) {
+    SDL_Surface* optimizedSurface;
     SDL_Surface* surface = SDL_LoadBMP(path.c_str());
     if(surface == NULL) {
         printf("Couldn't load surface. SDL Error: %s\n", SDL_GetError());
         return NULL;
     }
 
-    return surface;
+    optimizedSurface = SDL_ConvertSurface(surface, gScreenSurface->format, 0);
+    if(optimizedSurface == NULL) {
+        printf("Coulnd't optimize surface. SDL Error: %s\n", SDL_GetError());
+        return NULL;
+    }
+
+    SDL_FreeSurface(surface);
+
+    return optimizedSurface;
 }
 
 bool loadMedia() {
@@ -111,7 +120,13 @@ int main(int argc, char* argv[]) {
     bool isRunning = true;
 
     while(isRunning) {
-        SDL_BlitSurface(gActiveSurface, NULL, gScreenSurface, NULL);
+        SDL_Rect stretchRect;
+        stretchRect.x = 0;
+        stretchRect.y = 0;
+        stretchRect.w = SCREEN_WIDTH;
+        stretchRect.h = SCREEN_HEIGHT;
+        SDL_BlitScaled(gActiveSurface, NULL, gScreenSurface, &stretchRect);
+
         SDL_UpdateWindowSurface(gWindow);
 
         while(SDL_PollEvent(&event) != 0) {
