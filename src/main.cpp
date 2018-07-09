@@ -15,9 +15,8 @@ enum Surfaces {
 };
 
 SDL_Window* gWindow = NULL;
-SDL_Surface* gScreenSurface = NULL;
-SDL_Surface* gActiveSurface = NULL;
-SDL_Surface* gSurfaces[4];
+SDL_Renderer* gRenderer = NULL;
+SDL_Texture* gTexture = NULL;
 
 bool initSDL() {
     if(SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -39,6 +38,17 @@ bool initSDL() {
         return false;
     }
 
+    gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
+    if(gRenderer == NULL) {
+        printf(
+            "Renderer could not be created! SDL Error: %s\n",
+            SDL_GetError()
+        );
+        return false;
+    }
+
+    SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+
     int imgFlags = IMG_INIT_PNG;
     if(!(IMG_Init(imgFlags) & imgFlags)) {
         printf(
@@ -47,69 +57,57 @@ bool initSDL() {
         );
     }
 
-    gScreenSurface = SDL_GetWindowSurface(gWindow);
-
     return true;
 }
 
-SDL_Surface* loadSurface(std::string path) {
-    SDL_Surface* optimizedSurface;
+SDL_Texture* loadTexture(std::string path) {
+    SDL_Texture* texture = NULL;
+
     SDL_Surface* surface = IMG_Load(path.c_str());
     if(surface == NULL) {
-        printf("Couldn't load surface. IMG Error: %s\n", IMG_GetError());
+        printf(
+            "Could not load surface with image at path \"%s\". SDL_Error: %s\n",
+            path.c_str(),
+            SDL_GetError()
+        );
         return NULL;
     }
 
-    optimizedSurface = SDL_ConvertSurface(surface, gScreenSurface->format, 0);
-    if(optimizedSurface == NULL) {
-        printf("Coulnd't optimize surface. SDL Error: %s\n", SDL_GetError());
+    texture = SDL_CreateTextureFromSurface(gRenderer, surface);
+    if(texture == NULL) {
+        printf(
+            "Could not create texture from the loaded surface. SDL Error %s\n",
+            SDL_GetError()
+        );
         return NULL;
     }
 
     SDL_FreeSurface(surface);
 
-    return optimizedSurface;
+    return texture;
 }
 
 bool loadMedia() {
-    gSurfaces[SURFACE_ONE] = loadSurface("resources/hello_world_1.png");
-    if(gSurfaces[SURFACE_ONE] == NULL) {
-        printf("Failed to load SURFACE_ONE");
+    gTexture = loadTexture("resources/hello_world_1.png");
+    if(gTexture == NULL) {
+        printf("Failed to load the texture during media loading");
         return false;
     }
-
-    gSurfaces[SURFACE_TWO] = loadSurface("resources/hello_world_2.png");
-    if(gSurfaces[SURFACE_TWO] == NULL) {
-        printf("Failed to load SURFACE_TWO");
-        return false;
-    }
-
-    gSurfaces[SURFACE_THREE] = loadSurface("resources/hello_world_3.png");
-    if(gSurfaces[SURFACE_THREE] == NULL) {
-        printf("Failed to load SURFACE_THREE");
-        return false;
-    }
-
-    gSurfaces[SURFACE_FOUR] = loadSurface("resources/hello_world_4.png");
-    if(gSurfaces[SURFACE_FOUR] == NULL) {
-        printf("Failed to load SURFACE_FOUR");
-        return false;
-    }
-
-    gActiveSurface = gSurfaces[SURFACE_ONE];
 
     return true;
 }
 
 void destroySDL() {
-    for(int i = 0; i < sizeof(gSurfaces) / sizeof(SDL_Surface*); i++) {
-        SDL_FreeSurface(gSurfaces[i]);
-        gSurfaces[i] = NULL;
-    }
+    SDL_DestroyTexture(gTexture);
+    gTexture = NULL;
+
+    SDL_DestroyRenderer(gRenderer);
+    gRenderer = NULL;
 
     SDL_DestroyWindow(gWindow);
     gWindow = NULL;
 
+    IMG_Quit();
     SDL_Quit();
 }
 
@@ -129,14 +127,12 @@ int main(int argc, char* argv[]) {
     bool isRunning = true;
 
     while(isRunning) {
-        SDL_Rect stretchRect;
-        stretchRect.x = 0;
-        stretchRect.y = 0;
-        stretchRect.w = SCREEN_WIDTH;
-        stretchRect.h = SCREEN_HEIGHT;
-        SDL_BlitScaled(gActiveSurface, NULL, gScreenSurface, &stretchRect);
 
-        SDL_UpdateWindowSurface(gWindow);
+        SDL_RenderClear(gRenderer);
+
+        SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
+
+        SDL_RenderPresent(gRenderer);
 
         while(SDL_PollEvent(&event) != 0) {
             if(event.type == SDL_QUIT) {
@@ -146,14 +142,6 @@ int main(int argc, char* argv[]) {
             if(event.type == SDL_KEYDOWN) {
                 if(event.key.keysym.sym == SDLK_ESCAPE) {
                     isRunning = false;
-                } else if(event.key.keysym.sym == SDLK_LEFT) {
-                    gActiveSurface = gSurfaces[SURFACE_ONE];
-                } else if(event.key.keysym.sym == SDLK_UP) {
-                    gActiveSurface = gSurfaces[SURFACE_TWO];
-                } else if(event.key.keysym.sym == SDLK_RIGHT) {
-                    gActiveSurface = gSurfaces[SURFACE_THREE];
-                } else if(event.key.keysym.sym == SDLK_DOWN) {
-                    gActiveSurface = gSurfaces[SURFACE_FOUR];
                 }
             }
         }
