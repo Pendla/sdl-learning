@@ -1,22 +1,13 @@
 #include <string>
 
 #include <SDL2/SDL.h>
-#include <SDL2_image/SDL_image.h>
 #include <stdio.h>
 
 const int SCREEN_WIDTH = 1280;
 const int SCREEN_HEIGHT = 720;
 
-enum Surfaces {
-    SURFACE_ONE,
-    SURFACE_TWO,
-    SURFACE_THREE,
-    SURFACE_FOUR,
-};
-
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
-SDL_Texture* gTexture = NULL;
 
 bool initSDL() {
     if(SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -47,67 +38,16 @@ bool initSDL() {
         return false;
     }
 
-    SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
-
-    int imgFlags = IMG_INIT_PNG;
-    if(!(IMG_Init(imgFlags) & imgFlags)) {
-        printf(
-            "Could not initialize SDL Image extension! IMG Error: %s\n",
-            IMG_GetError()
-        );
-    }
-
-    return true;
-}
-
-SDL_Texture* loadTexture(std::string path) {
-    SDL_Texture* texture = NULL;
-
-    SDL_Surface* surface = IMG_Load(path.c_str());
-    if(surface == NULL) {
-        printf(
-            "Could not load surface with image at path \"%s\". SDL_Error: %s\n",
-            path.c_str(),
-            SDL_GetError()
-        );
-        return NULL;
-    }
-
-    texture = SDL_CreateTextureFromSurface(gRenderer, surface);
-    if(texture == NULL) {
-        printf(
-            "Could not create texture from the loaded surface. SDL Error %s\n",
-            SDL_GetError()
-        );
-        return NULL;
-    }
-
-    SDL_FreeSurface(surface);
-
-    return texture;
-}
-
-bool loadMedia() {
-    gTexture = loadTexture("resources/hello_world_1.png");
-    if(gTexture == NULL) {
-        printf("Failed to load the texture during media loading");
-        return false;
-    }
-
     return true;
 }
 
 void destroySDL() {
-    SDL_DestroyTexture(gTexture);
-    gTexture = NULL;
-
     SDL_DestroyRenderer(gRenderer);
     gRenderer = NULL;
 
     SDL_DestroyWindow(gWindow);
     gWindow = NULL;
 
-    IMG_Quit();
     SDL_Quit();
 }
 
@@ -118,19 +58,47 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    bool loadMediaSuccess = loadMedia();
-    if(!loadMediaSuccess) {
-        return -1;
-    }
-
     SDL_Event event;
     bool isRunning = true;
 
     while(isRunning) {
-
+        SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
         SDL_RenderClear(gRenderer);
 
-        SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
+        SDL_Rect fillRect = {
+            SCREEN_WIDTH / 4,
+            SCREEN_HEIGHT / 4,
+            SCREEN_WIDTH / 2,
+            SCREEN_HEIGHT / 2,
+        };
+
+        SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0xFF);
+        SDL_RenderFillRect(gRenderer, &fillRect);
+
+        SDL_Rect outlineRect = {
+            SCREEN_WIDTH / 6,
+            SCREEN_HEIGHT / 6,
+            SCREEN_WIDTH * 2 / 3,
+            SCREEN_HEIGHT * 2 / 3,
+        };
+
+        SDL_SetRenderDrawColor(gRenderer, 0x00, 0xFF, 0x00, 0xFF);
+        SDL_RenderDrawRect(gRenderer, &outlineRect);
+
+        SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0xFF, 0xFF);
+        SDL_RenderDrawLine(
+            gRenderer,
+            0,
+            SCREEN_HEIGHT / 2,
+            SCREEN_WIDTH,
+            SCREEN_HEIGHT / 2
+        );
+
+        SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0x00, 0xFF);
+
+        for(int i = 0; i < SCREEN_HEIGHT; i += 4) {
+            SDL_RenderDrawPoint(gRenderer, SCREEN_WIDTH / 2, i);
+        }
 
         SDL_RenderPresent(gRenderer);
 
